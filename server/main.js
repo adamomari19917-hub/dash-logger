@@ -37,6 +37,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/servers', serverRoutes);
 app.use('/api/config', configRoutes);
 
+// Health check endpoint (No DB required)
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Server is running', env: process.env.NODE_ENV });
+});
+
 // Guilds cache endpoint
 app.use('/api/guilds', express.Router()
   .post('/cache', (req, res) => {
