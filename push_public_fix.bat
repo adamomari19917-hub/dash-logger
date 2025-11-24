@@ -18,7 +18,7 @@ call git commit -m "Fix: Move build output to public folder for Vercel"
 
 echo.
 echo [INFO] Pushing to GitHub...
-call git push origin master
+call git push -f origin master
 
 echo.
 echo [SUCCESS] Fix pushed! Vercel should redeploy automatically.
