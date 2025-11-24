@@ -39,7 +39,12 @@ app.use('/api/config', configRoutes);
 
 // Health check endpoint (No DB required)
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'Server is running', env: process.env.NODE_ENV });
+  res.status(200).json({
+    status: 'ok',
+    message: 'Server is running',
+    env: process.env.NODE_ENV,
+    mongoConfigured: !!process.env.MONGO_URI
+  });
 });
 
 // Guilds cache endpoint
