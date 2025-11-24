@@ -22,8 +22,13 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: [
+    'https://adamomari19917-hub.github.io',
+    'http://localhost:3000',
+    process.env.CLIENT_URL
+  ].filter(Boolean),
   credentials: true
 }));
 app.use(express.json());
