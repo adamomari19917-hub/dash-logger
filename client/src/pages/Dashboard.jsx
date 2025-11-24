@@ -4,6 +4,9 @@ import styled from 'styled-components';
 import { Menu } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 
+// API URL configuration
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
 const DashboardContainer = styled.div`
   min-height: 100vh;
   position: relative;
@@ -743,20 +746,20 @@ const CategoryCheckbox = styled.input`
 const Dashboard = ({ user, onLogin, onLogout }) => {
   const { serverId: pathServerId } = useParams();
   const location = useLocation();
-  
+
   // Get serverId from query parameters (?server=123) or URL path (/dashboard/123)
   const getServerId = () => {
     const urlParams = new URLSearchParams(location.search);
     return urlParams.get('server') || pathServerId;
   };
-  
+
   const serverId = getServerId();
   useEffect(() => {
     console.log('🔍 Dashboard serverId from query/path:', serverId);
     console.log('🔍 Current URL:', window.location.href);
     console.log('🔍 Query params:', location.search);
   }, [serverId, location]);
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCategories, setExpandedCategories] = useState({});
   const [showChannelModal, setShowChannelModal] = useState(false);
@@ -848,7 +851,7 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
       name: 'Polls',
       subcategories: [
         'Poll Create',
-        'Poll Delete', 
+        'Poll Delete',
         'Poll Finalize',
         'Poll Votes Add',
         'Poll Votes Remove'
@@ -983,7 +986,7 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
 
   const fetchBotData = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/bot/status`);
+      const response = await fetch(`${API_URL}/api/bot/status`);
       if (response.ok) {
         const data = await response.json();
         setBotData(data);
@@ -996,14 +999,14 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
 
   const fetchServerChannels = async (serverId) => {
     if (!serverId) return;
-    
+
     setLoadingChannels(true);
-    setChannelError(null); 
+    setChannelError(null);
     try {
       const authToken = localStorage.getItem('authToken');
       console.log('Fetching channels for server:', serverId);
-      
-      const response = await fetch(`http://localhost:3001/api/servers/${serverId}/channels`, {
+
+      const response = await fetch(`${API_URL}/api/servers/${serverId}/channels`, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
@@ -1015,7 +1018,7 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
         console.error('API Error:', errorData);
-        
+
         if (response.status === 403) {
           throw new Error('Bot does not have access to this server');
         } else if (response.status === 404) {
@@ -1027,7 +1030,7 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
 
       const data = await response.json();
       console.log('Channels data received:', data);
-      
+
       if (data.success && data.channels) {
         setServerChannels(data.channels);
         console.log('Channels set:', data.channels);
@@ -1090,22 +1093,22 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
       selectChannelForMassEdit(channel);
       return;
     }
-    
+
     // Handle set all types mode
     if (selectedCategory === 'Set All Types') {
       selectChannelForAllTypes(channel);
       return;
     }
-    
+
     setSelectedChannels(prev => {
       const newChannels = {
         ...prev,
         [categoryName]: channel
       };
-      
+
       const hasChanges = JSON.stringify(newChannels) !== JSON.stringify(savedChannels);
       setHasUnsavedChanges(hasChanges);
-      
+
       return newChannels;
     });
     closeChannelModal();
@@ -1117,15 +1120,15 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
     setSelectedChannels(prev => {
       const newChannels = { ...prev };
       delete newChannels[categoryName];
-      
+
       console.log('Channels after removal:', newChannels);
       console.log('Current savedChannels:', savedChannels);
-      
+
       const hasChanges = JSON.stringify(newChannels) !== JSON.stringify(savedChannels);
       setHasUnsavedChanges(hasChanges);
-      
+
       console.log('Has unsaved changes after removal:', hasChanges);
-      
+
       return newChannels;
     });
   };
@@ -1133,17 +1136,17 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
   const saveChanges = async () => {
     try {
       setIsSaving(true);
-      
+
       console.log('Saving channel configurations:', selectedChannels);
       console.log('Current savedChannels before save:', savedChannels);
-      
+
 
       const configToSave = { ...selectedChannels };
       localStorage.setItem(`channelConfig_${serverId}`, JSON.stringify(configToSave));
       await new Promise(resolve => setTimeout(resolve, 500));
       try {
         const authToken = localStorage.getItem('authToken');
-        const response = await fetch(`http://localhost:3001/api/config/servers/${serverId}/config`, {
+        const response = await fetch(`${API_URL}/api/config/servers/${serverId}/config`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${authToken}`,
@@ -1165,12 +1168,12 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
         console.error('❌ Error communicating with bot API:', apiError);
         // Still continue with local save even if bot update fails
       }
-      
+
       setSavedChannels(configToSave);
       setHasUnsavedChanges(false);
-      
+
       console.log('Saved configuration:', configToSave);
-      
+
       // Exit mass edit mode and trigger animation on save
       setIsMassEditMode(false);
       setSelectedTypes(new Set());
@@ -1178,7 +1181,7 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
       setTimeout(() => {
         setIsAnimatingOut(false);
       }, 1200);
-      
+
     } catch (error) {
       console.error('Error saving channel configurations:', error);
     } finally {
@@ -1189,7 +1192,7 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
   const resetChanges = () => {
     setSelectedChannels({ ...savedChannels });
     setHasUnsavedChanges(false);
-    
+
     // Exit mass edit mode and trigger animation on reset
     setIsMassEditMode(false);
     setSelectedTypes(new Set());
@@ -1212,7 +1215,7 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
   const handleCategorySelection = (categoryName, isChecked) => {
     const category = logCategories.find(cat => cat.name === categoryName);
     const newSelectedTypes = new Set(selectedTypes);
-    
+
     if (isChecked) {
       // Add category and all its subcategories
       newSelectedTypes.add(categoryName);
@@ -1234,16 +1237,16 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
 
   const handleMassRemoveChannel = () => {
     if (selectedTypes.size === 0) return;
-    
+
     const newChannels = { ...selectedChannels };
     selectedTypes.forEach(typeName => {
       delete newChannels[typeName];
     });
-    
+
     setSelectedChannels(newChannels);
     const hasChanges = JSON.stringify(newChannels) !== JSON.stringify(savedChannels);
     setHasUnsavedChanges(hasChanges);
-    
+
     // Keep mass edit mode active, only clear selections
     setSelectedTypes(new Set());
   };
@@ -1253,11 +1256,11 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
     selectedTypes.forEach(typeName => {
       newChannels[typeName] = channel;
     });
-    
+
     setSelectedChannels(newChannels);
     const hasChanges = JSON.stringify(newChannels) !== JSON.stringify(savedChannels);
     setHasUnsavedChanges(hasChanges);
-    
+
     // Keep mass edit mode active, only close modal and clear selections
     setSelectedTypes(new Set());
     closeChannelModal();
@@ -1265,7 +1268,7 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
 
   const selectChannelForAllTypes = (channel) => {
     const newChannels = { ...selectedChannels };
-    
+
     // Set all categories and subcategories to the selected channel
     logCategories.forEach(category => {
       newChannels[category.name] = channel;
@@ -1273,17 +1276,17 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
         newChannels[subcategory] = channel;
       });
     });
-    
+
     setSelectedChannels(newChannels);
     const hasChanges = JSON.stringify(newChannels) !== JSON.stringify(savedChannels);
     setHasUnsavedChanges(hasChanges);
-    
+
     closeChannelModal();
   };
 
   const handleRemoveAllChannels = () => {
     const newChannels = {};
-    
+
     // Remove all channels by creating empty object (no channels set)
     setSelectedChannels(newChannels);
     const hasChanges = JSON.stringify(newChannels) !== JSON.stringify(savedChannels);
@@ -1371,8 +1374,8 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
         <SearchInputContainer>
           <SearchIcon>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
             </svg>
           </SearchIcon>
           <SearchInput
@@ -1400,11 +1403,11 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
             <ActionButton onClick={() => {
               setIsMassEditMode(false);
               setSelectedTypes(new Set());
-            }} style={{background: '#e21818'}}>Cancel</ActionButton>
-            <ActionButton onClick={handleMassSetChannel} disabled={selectedTypes.size === 0} style={{background: selectedTypes.size > 0 ? '#3b82f6' : '#6b7280'}}>
+            }} style={{ background: '#e21818' }}>Cancel</ActionButton>
+            <ActionButton onClick={handleMassSetChannel} disabled={selectedTypes.size === 0} style={{ background: selectedTypes.size > 0 ? '#3b82f6' : '#6b7280' }}>
               Set channel
             </ActionButton>
-            <ActionButton onClick={handleMassRemoveChannel} disabled={selectedTypes.size === 0} style={{background: selectedTypes.size > 0 ? '#3b82f6' : '#6b7280'}}>
+            <ActionButton onClick={handleMassRemoveChannel} disabled={selectedTypes.size === 0} style={{ background: selectedTypes.size > 0 ? '#3b82f6' : '#6b7280' }}>
               Remove channel
             </ActionButton>
           </>
@@ -1413,84 +1416,84 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
 
 
       <LoggingContainer>
-      {filteredCategories.map((category) => (
-        <CategoryItem key={category.name}>
-          <CategoryHeader onClick={() => toggleCategory(category.name)}>
-            <CategoryLeft>
-              <CategoryMenuIcon>
-                <Menu size={16} />
-              </CategoryMenuIcon>
-              {isMassEditMode && (
-                <CategoryCheckbox
-                  type="checkbox"
-                  checked={selectedTypes.has(category.name)}
-                  onChange={(e) => handleCategorySelection(category.name, e.target.checked)}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              )}
-              <CategoryName>{category.name}</CategoryName>
-            </CategoryLeft>
-            <SetChannelButton 
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!e.target.closest('button[data-remove]')) {
-                  openChannelModal(category.name);
-                }
-              }}
-            >
-              {selectedChannels[category.name] ? (
-                <>
-                  <ButtonChannelIcon>#</ButtonChannelIcon>
-                  <ChannelText>{selectedChannels[category.name].name}</ChannelText>
-                  <RemoveChannelButton data-remove onClick={(e) => removeChannel(category.name, e)}>
-                    ×
-                  </RemoveChannelButton>
-                </>
-              ) : (
-                'Set category channel'
-              )}
-            </SetChannelButton>
-          </CategoryHeader>
-          
-          {category.subcategories.length > 0 && (
-            <SubCategoryContainer expanded={expandedCategories[category.name]}>
-              {category.subcategories.map((subcategory) => (
-                <SubCategoryItem key={subcategory}>
-                  <div style={{display: 'flex', alignItems: 'center', flex: 1}}>
-                    {isMassEditMode && (
-                      <TypeCheckbox
-                        type="checkbox"
-                        checked={selectedTypes.has(subcategory)}
-                        onChange={(e) => handleTypeSelection(subcategory, e.target.checked)}
-                      />
-                    )}
-                    <SubCategoryName>{subcategory}</SubCategoryName>
-                  </div>
-                  <SubChannelButton 
-                    onClick={(e) => {
-                      if (!e.target.closest('button[data-remove]')) {
-                        openChannelModal(subcategory);
-                      }
-                    }}
-                  >
-                    {selectedChannels[subcategory] ? (
-                      <>
-                        <ButtonChannelIcon>#</ButtonChannelIcon>
-                        <ChannelText>{selectedChannels[subcategory].name}</ChannelText>
-                        <RemoveChannelButton data-remove onClick={(e) => removeChannel(subcategory, e)}>
-                          ×
-                        </RemoveChannelButton>
-                      </>
-                    ) : (
-                      'Set channel'
-                    )}
-                  </SubChannelButton>
-                </SubCategoryItem>
-              ))}
-            </SubCategoryContainer>
-          )}
-        </CategoryItem>
-      ))}
+        {filteredCategories.map((category) => (
+          <CategoryItem key={category.name}>
+            <CategoryHeader onClick={() => toggleCategory(category.name)}>
+              <CategoryLeft>
+                <CategoryMenuIcon>
+                  <Menu size={16} />
+                </CategoryMenuIcon>
+                {isMassEditMode && (
+                  <CategoryCheckbox
+                    type="checkbox"
+                    checked={selectedTypes.has(category.name)}
+                    onChange={(e) => handleCategorySelection(category.name, e.target.checked)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                )}
+                <CategoryName>{category.name}</CategoryName>
+              </CategoryLeft>
+              <SetChannelButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!e.target.closest('button[data-remove]')) {
+                    openChannelModal(category.name);
+                  }
+                }}
+              >
+                {selectedChannels[category.name] ? (
+                  <>
+                    <ButtonChannelIcon>#</ButtonChannelIcon>
+                    <ChannelText>{selectedChannels[category.name].name}</ChannelText>
+                    <RemoveChannelButton data-remove onClick={(e) => removeChannel(category.name, e)}>
+                      ×
+                    </RemoveChannelButton>
+                  </>
+                ) : (
+                  'Set category channel'
+                )}
+              </SetChannelButton>
+            </CategoryHeader>
+
+            {category.subcategories.length > 0 && (
+              <SubCategoryContainer expanded={expandedCategories[category.name]}>
+                {category.subcategories.map((subcategory) => (
+                  <SubCategoryItem key={subcategory}>
+                    <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                      {isMassEditMode && (
+                        <TypeCheckbox
+                          type="checkbox"
+                          checked={selectedTypes.has(subcategory)}
+                          onChange={(e) => handleTypeSelection(subcategory, e.target.checked)}
+                        />
+                      )}
+                      <SubCategoryName>{subcategory}</SubCategoryName>
+                    </div>
+                    <SubChannelButton
+                      onClick={(e) => {
+                        if (!e.target.closest('button[data-remove]')) {
+                          openChannelModal(subcategory);
+                        }
+                      }}
+                    >
+                      {selectedChannels[subcategory] ? (
+                        <>
+                          <ButtonChannelIcon>#</ButtonChannelIcon>
+                          <ChannelText>{selectedChannels[subcategory].name}</ChannelText>
+                          <RemoveChannelButton data-remove onClick={(e) => removeChannel(subcategory, e)}>
+                            ×
+                          </RemoveChannelButton>
+                        </>
+                      ) : (
+                        'Set channel'
+                      )}
+                    </SubChannelButton>
+                  </SubCategoryItem>
+                ))}
+              </SubCategoryContainer>
+            )}
+          </CategoryItem>
+        ))}
       </LoggingContainer>
 
       <ChannelModal show={showChannelModal} onClick={closeChannelModal}>
@@ -1505,7 +1508,7 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
           <ChannelList>
             {loadingChannels ? (
               <ChannelItem>
-                <ChannelName style={{color: '#b9bbbe', fontStyle: 'italic'}}>
+                <ChannelName style={{ color: '#b9bbbe', fontStyle: 'italic' }}>
                   Loading channels...
                 </ChannelName>
               </ChannelItem>
@@ -1514,7 +1517,7 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
                 {serverChannels.length > 0 ? (
                   (() => {
                     const { categories, uncategorizedChannels } = organizeChannelsByCategory(serverChannels);
-                    
+
                     return (
                       <>
                         {uncategorizedChannels.length > 0 && (
@@ -1535,7 +1538,7 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
                             </ChannelGroup>
                           </ChannelCategoryItem>
                         )}
-                        
+
 
                         {Object.entries(categories).map(([categoryId, category]) => (
                           <ChannelCategoryItem key={categoryId}>
@@ -1560,19 +1563,19 @@ const Dashboard = ({ user, onLogin, onLogout }) => {
                   })()
                 ) : (
                   <ChannelItem>
-                    <ChannelName style={{color: '#ef4444', fontStyle: 'italic'}}>
+                    <ChannelName style={{ color: '#ef4444', fontStyle: 'italic' }}>
                       {channelError || 'Failed to load server channels. Please try again.'}
                     </ChannelName>
                   </ChannelItem>
                 )}
-                
+
                 <ChannelItem>
-                  <ChannelName style={{color: '#b9bbbe', fontStyle: 'italic'}}>
+                  <ChannelName style={{ color: '#b9bbbe', fontStyle: 'italic' }}>
                     Channel not found?
                   </ChannelName>
                 </ChannelItem>
                 <ChannelItem>
-                  <ChannelName style={{color: '#7289da'}}>
+                  <ChannelName style={{ color: '#7289da' }}>
                     Use other channel
                   </ChannelName>
                 </ChannelItem>

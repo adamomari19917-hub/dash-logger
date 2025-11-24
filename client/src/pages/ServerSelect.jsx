@@ -3,6 +3,9 @@ import styled from 'styled-components';
 import Navbar from '../components/Navbar';
 import GridBackground from '../components/GridBackground';
 
+// API URL configuration
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
 const ServerSelectContainer = styled.div`
   min-height: 100vh;
   position: relative;
@@ -271,13 +274,13 @@ const ServerSelect = ({ user, onLogin, onLogout }) => {
   const fetchUserServers = async () => {
     try {
       const storedGuilds = localStorage.getItem('userGuilds');
-      
+
       if (storedGuilds && storedGuilds !== 'undefined' && storedGuilds !== 'null') {
         try {
           const guilds = JSON.parse(storedGuilds);
-          
+
           if (Array.isArray(guilds) && guilds.length > 0) {
-            const serversWithInvitePermission = guilds.filter(guild => 
+            const serversWithInvitePermission = guilds.filter(guild =>
               guild.owner || (parseInt(guild.permissions) & 0x20) === 0x20
             );
             setUserServers(serversWithInvitePermission);
@@ -289,7 +292,7 @@ const ServerSelect = ({ user, onLogin, onLogout }) => {
       }
 
       setUserServers([]);
-      
+
     } catch (err) {
       console.error('Error fetching user servers:', err);
       setUserServers([]);
@@ -298,7 +301,7 @@ const ServerSelect = ({ user, onLogin, onLogout }) => {
 
   const fetchBotServers = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/auth/bot-servers');
+      const response = await fetch(`${API_URL}/api/auth/bot-servers`);
       if (!response.ok) {
         throw new Error('Failed to fetch bot servers');
       }
@@ -325,7 +328,7 @@ const ServerSelect = ({ user, onLogin, onLogout }) => {
 
   const handleServerSelect = (server) => {
     const hasBot = isBotInServer(server.id);
-    
+
     if (hasBot) {
       window.location.href = `/dashboard?server=${server.id}`;
     } else {
@@ -335,15 +338,15 @@ const ServerSelect = ({ user, onLogin, onLogout }) => {
 
   const handleSyncServers = async () => {
     if (!user) return;
-    
+
     setSyncing(true);
     try {
       // Refresh user data from Discord API
       const authToken = localStorage.getItem('authToken');
       const discordAccessToken = localStorage.getItem('discordAccessToken');
-      
+
       if (discordAccessToken) {
-        const response = await fetch('http://localhost:3001/api/auth/refresh-user', {
+        const response = await fetch(`${API_URL}/api/auth/refresh-user`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${authToken}`,
@@ -351,7 +354,7 @@ const ServerSelect = ({ user, onLogin, onLogout }) => {
           },
           body: JSON.stringify({ discordAccessToken })
         });
-        
+
         if (response.ok) {
           const userData = await response.json();
           if (userData.guilds) {
@@ -359,7 +362,7 @@ const ServerSelect = ({ user, onLogin, onLogout }) => {
           }
         }
       }
-      
+
       // Refresh both user and bot servers
       await Promise.all([
         fetchUserServers(),
@@ -377,7 +380,7 @@ const ServerSelect = ({ user, onLogin, onLogout }) => {
     <ServerSelectContainer>
       <GridBackground />
       <Navbar user={user} onLogin={onLogin} onLogout={onLogout} />
-      
+
       <MainContent>
         <PageHeader>
           <PageTitle>Select a Server</PageTitle>
@@ -385,7 +388,7 @@ const ServerSelect = ({ user, onLogin, onLogout }) => {
             Choose a Discord server to access Logger Bot dashboard or invite the bot
           </PageSubtitle>
         </PageHeader>
-        
+
         <ServerListContainer>
           <ServerListHeader>
             <ServerListTitle>Choose a Discord server to access Logger Bot dashboard or invite Me</ServerListTitle>
@@ -395,7 +398,7 @@ const ServerSelect = ({ user, onLogin, onLogout }) => {
               </SyncButton>
             )}
           </ServerListHeader>
-          
+
           {loading ? (
             <LoadingMessage>Loading your servers...</LoadingMessage>
           ) : !user ? (
@@ -426,7 +429,7 @@ const ServerSelect = ({ user, onLogin, onLogout }) => {
                   .map(server => {
                     const hasBot = isBotInServer(server.id);
                     return (
-                      <ServerItem 
+                      <ServerItem
                         key={server.id}
                         selected={selectedServer === server.id}
                         hasBot={hasBot}
@@ -434,8 +437,8 @@ const ServerSelect = ({ user, onLogin, onLogout }) => {
                       >
                         <ServerIcon>
                           {getServerIcon(server) ? (
-                            <img 
-                              src={getServerIcon(server)} 
+                            <img
+                              src={getServerIcon(server)}
                               alt={server.name}
                             />
                           ) : (
@@ -443,11 +446,11 @@ const ServerSelect = ({ user, onLogin, onLogout }) => {
                           )}
                           <StatusIndicator online={hasBot} />
                         </ServerIcon>
-                        
+
                         <ServerInfo>
                           <ServerName>{server.name}</ServerName>
                         </ServerInfo>
-                        
+
                         <ServerArrow>
                           {hasBot ? '→' : '+'}
                         </ServerArrow>

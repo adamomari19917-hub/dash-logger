@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
-import { 
-  Home, 
-  Settings, 
-  MessageSquare, 
-  Activity, 
-  Users, 
-  Shield, 
+import {
+  Home,
+  Settings,
+  MessageSquare,
+  Activity,
+  Users,
+  Shield,
   ChevronDown,
   Server,
   LogOut
 } from 'lucide-react';
 import GridBackground from './GridBackground';
 import Navbar from './Navbar';
+
+// API URL configuration
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 const DashboardContainer = styled.div`
   min-height: 100vh;
@@ -126,20 +129,20 @@ const DashboardLayout = ({ user, onLogin, onLogout, children, currentPage = 'log
   const location = useLocation();
   const [selectedServer, setSelectedServer] = useState(null);
   const [botData, setBotData] = useState(null);
-  
+
   // Get serverId from query parameters (?server=123) or URL path (/dashboard/123)
   const getServerId = () => {
     const urlParams = new URLSearchParams(location.search);
     return urlParams.get('server') || pathServerId;
   };
-  
+
   const serverId = getServerId();
 
   useEffect(() => {
     // Fetch bot data
     const fetchBotData = async () => {
       try {
-        const response = await fetch(`http://localhost:3001/api/bot/status`);
+        const response = await fetch(`${API_URL}/api/bot/status`);
         if (response.ok) {
           const data = await response.json();
           setBotData(data);
@@ -151,23 +154,23 @@ const DashboardLayout = ({ user, onLogin, onLogout, children, currentPage = 'log
 
     fetchBotData();
   }, []);
-  
+
   useEffect(() => {
     const fetchServerInfo = async () => {
       if (!serverId) {
         setSelectedServer(null);
         return;
       }
-      
+
       try {
         const authToken = localStorage.getItem('authToken');
-        const response = await fetch(`http://localhost:3001/api/servers/${serverId}/info`, {
+        const response = await fetch(`${API_URL}/api/servers/${serverId}/info`, {
           headers: {
             'Authorization': `Bearer ${authToken}`,
             'Content-Type': 'application/json'
           }
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.server) {
@@ -180,14 +183,14 @@ const DashboardLayout = ({ user, onLogin, onLogout, children, currentPage = 'log
         console.error('Error fetching server info:', error);
       }
     };
-    
+
     fetchServerInfo();
   }, [serverId]);
 
   return (
     <DashboardContainer>
       <GridBackground />
-      
+
       <Navbar user={user} onLogin={onLogin} onLogout={onLogout} />
 
       <MainLayout>
@@ -218,7 +221,7 @@ const DashboardLayout = ({ user, onLogin, onLogout, children, currentPage = 'log
                   </CardHeaderContent>
                 </CardHeaderLeft>
               </CardHeader>
-              
+
               {children}
             </LoggingCard>
           )}
@@ -236,7 +239,7 @@ const DashboardLayout = ({ user, onLogin, onLogout, children, currentPage = 'log
                   </CardHeaderContent>
                 </CardHeaderLeft>
               </CardHeader>
-              
+
               {children}
             </LoggingCard>
           )}

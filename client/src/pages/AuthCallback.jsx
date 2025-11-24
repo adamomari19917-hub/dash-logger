@@ -1,6 +1,9 @@
 import React, { useEffect } from 'react';
 import styled from 'styled-components';
 
+// API URL configuration
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
 const CallbackContainer = styled.div`
   min-height: 100vh;
   display: flex;
@@ -19,7 +22,7 @@ const LoadingMessage = styled.div`
 const AuthCallback = () => {
   useEffect(() => {
     const handleCallback = async () => {
-      let code; 
+      let code;
       try {
         const urlParams = new URLSearchParams(window.location.search);
         code = urlParams.get('code');
@@ -44,21 +47,21 @@ const AuthCallback = () => {
           window.close();
           return;
         }
-        
+
 
         processedCodes.push(code);
-        localStorage.setItem('processedCodes', JSON.stringify(processedCodes.slice(-5))); 
+        localStorage.setItem('processedCodes', JSON.stringify(processedCodes.slice(-5)));
 
         try {
-          const testResponse = await fetch('http://localhost:3001/api/auth/discord/url');
+          const testResponse = await fetch(`${API_URL}/api/auth/discord/url`);
         } catch (testError) {
           throw new Error('Cannot connect to server. Please ensure the server is running on port 3001.');
         }
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); 
-        
-        const response = await fetch('http://localhost:3001/api/auth/discord/callback', {
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        const response = await fetch(`${API_URL}/api/auth/discord/callback`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -66,11 +69,11 @@ const AuthCallback = () => {
           body: JSON.stringify({ code }),
           signal: controller.signal
         });
-        
+
         clearTimeout(timeoutId);
 
         const data = await response.json();
-        
+
         if (!response.ok) {
           if (data.code === 'INVALID_GRANT') {
             throw new Error('Discord authorization code has expired. Please try logging in again.');
@@ -86,7 +89,7 @@ const AuthCallback = () => {
               token: data.token,
               guilds: data.guilds
             }, window.location.origin);
-            
+
             setTimeout(() => {
               window.close();
             }, 1000);
@@ -99,34 +102,34 @@ const AuthCallback = () => {
         }
       } catch (error) {
         console.error('Auth callback error:', error);
-        
+
         let errorMessage = error.message;
         if (error.message.includes('Failed to fetch') || error.message.includes('Cannot connect to server')) {
-          
+
           if (window.opener && code) {
             window.opener.postMessage({
               type: 'DISCORD_AUTH_CODE',
               code: code
             }, window.location.origin);
-            
+
             setTimeout(() => {
               window.close();
             }, 1000);
-            return; 
+            return;
           }
         } else if (error.message.includes('already used') || error.message.includes('authorization code has expired')) {
           errorMessage = 'Authorization code expired or already used. Please try logging in again.';
         } else if (error.name === 'AbortError') {
           errorMessage = 'Request timeout. Server took too long to respond.';
         }
-        
+
         if (window.opener && !error.message.includes('already used')) {
           window.opener.postMessage({
             type: 'DISCORD_AUTH_ERROR',
             error: errorMessage
           }, window.location.origin);
         }
-        
+
         setTimeout(() => {
           window.close();
         }, 1000);

@@ -5,6 +5,9 @@ import { ChevronDown, ChevronUp, Activity, Server, Zap } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import GridBackground from '../components/GridBackground';
 
+// API URL configuration
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
 const StatusContainer = styled.div`
   min-height: 100vh;
   position: relative;
@@ -642,7 +645,7 @@ const Status = ({ user, onLogin, onLogout }) => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/bot/status');
+        const response = await fetch(`${API_URL}/api/bot/status`);
         if (response.ok) {
           const data = await response.json();
           setServices(prev => ({
@@ -673,7 +676,7 @@ const Status = ({ user, onLogin, onLogout }) => {
     };
 
     fetchStatus();
-    const interval = setInterval(fetchStatus, 30000); 
+    const interval = setInterval(fetchStatus, 30000);
 
     return () => clearInterval(interval);
   }, []);
@@ -704,7 +707,7 @@ const Status = ({ user, onLogin, onLogout }) => {
     <StatusContainer>
       <GridBackground />
       <Navbar user={user} onLogin={onLogin} onLogout={onLogout} />
-      
+
       <StatusContent>
         <StatusBanner allOnline={allServicesOnline}>
           {allServicesOnline ? 'All systems operational' : 'Some systems experiencing issues'}
@@ -794,7 +797,7 @@ const Status = ({ user, onLogin, onLogout }) => {
           ))}
         </ServicesGrid>
       </StatusContent>
-      
+
       <PromoSection>
         <PromoCard>
           <PromoContent>
@@ -810,7 +813,7 @@ const Status = ({ user, onLogin, onLogout }) => {
           </PromoContent>
           <PromoVisual>
             <PromoBotIcon>
-              <div 
+              <div
                 style={{
                   width: '100%',
                   height: '100%',
@@ -825,13 +828,13 @@ const Status = ({ user, onLogin, onLogout }) => {
           </PromoVisual>
         </PromoCard>
       </PromoSection>
-      
+
       <FooterSection>
         <FooterContainer>
           <FooterColumn>
             <FooterBrand>
               <FooterLogo>
-                <div 
+                <div
                   style={{
                     width: '100%',
                     height: '100%',
@@ -849,7 +852,7 @@ const Status = ({ user, onLogin, onLogout }) => {
               A powerful Discord logging bot that tracks and records all server activities. Monitor messages, user actions, and server changes with detailed logs.
             </FooterDescription>
           </FooterColumn>
-          
+
           <FooterColumn>
             <FooterTitle>Website Pages</FooterTitle>
             <FooterLink to="/">Home</FooterLink>
@@ -857,7 +860,7 @@ const Status = ({ user, onLogin, onLogout }) => {
             <FooterLink to="/status">Status</FooterLink>
             <FooterExternalLink href="https://discord.gg/N7G2BQVC4g" target="_blank" rel="noopener noreferrer">Support</FooterExternalLink>
           </FooterColumn>
-          
+
           <FooterColumn>
             <FooterTitle>Other Links</FooterTitle>
             <FooterExternalLink href="https://discord.gg/N7G2BQVC4g" target="_blank" rel="noopener noreferrer">Support</FooterExternalLink>
@@ -866,7 +869,7 @@ const Status = ({ user, onLogin, onLogout }) => {
             <FooterLink to="/terms">Terms of Service</FooterLink>
           </FooterColumn>
         </FooterContainer>
-        
+
         <FooterBottom>
           © 2025 Logify Logger. All rights reserved.
         </FooterBottom>

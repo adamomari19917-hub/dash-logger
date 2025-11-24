@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import styled, { createGlobalStyle, keyframes } from 'styled-components';
 import Home from './pages/Home';
 import About from './pages/About';
@@ -9,6 +9,9 @@ import Terms from './pages/Terms';
 import Dashboard from './pages/Dashboard';
 import ServerSelect from './pages/ServerSelect';
 import AuthCallback from './pages/AuthCallback';
+
+// API URL configuration
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 const simplePageTransition = keyframes`
   from {
@@ -101,7 +104,7 @@ function App() {
   // Function to fetch bot data
   const fetchBotData = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/bot/status');
+      const response = await fetch(`${API_URL}/api/bot/status`);
       if (response.ok) {
         const data = await response.json();
         setBotData(data);
@@ -116,11 +119,11 @@ function App() {
   const refreshUserData = async () => {
     const accessToken = localStorage.getItem('discordAccessToken');
     const authToken = localStorage.getItem('authToken');
-    
+
     if (!accessToken || !authToken) return;
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/refresh-user', {
+      const response = await fetch(`${API_URL}/api/auth/refresh-user`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -148,7 +151,7 @@ function App() {
   useEffect(() => {
     const userData = localStorage.getItem('discordUser');
     const userToken = localStorage.getItem('authToken');
-    
+
     if (userData && userToken) {
       try {
         const parsedUser = JSON.parse(userData);
@@ -176,7 +179,7 @@ function App() {
 
     const handleMessage = (event) => {
       if (event.origin !== window.location.origin) return;
-      
+
       if (event.data.type === 'DISCORD_AUTH_SUCCESS') {
         const { user, token, guilds, accessToken, refreshToken } = event.data;
         localStorage.setItem('discordUser', JSON.stringify(user));
@@ -204,7 +207,7 @@ function App() {
     };
 
     window.addEventListener('message', handleMessage);
-    
+
     return () => {
       clearInterval(refreshInterval);
       clearTimeout(initialRefreshTimeout);
@@ -215,8 +218,8 @@ function App() {
   const handleAuthCode = async (code) => {
     try {
       console.log('📡 Processing auth code in main window...');
-      
-      const response = await fetch('http://localhost:3001/api/auth/discord/callback', {
+
+      const response = await fetch(`${API_URL}/api/auth/discord/callback`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -261,27 +264,27 @@ function App() {
     localStorage.removeItem('discordRefreshToken');
     localStorage.removeItem('userGuilds');
     sessionStorage.clear();
-    
+
     const clientId = '1421528633289216093';
     const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
     const scope = 'identify email guilds';
-    const state = Math.random().toString(36).substring(2, 15); 
-    const timestamp = Date.now(); 
-    const nonce = Math.random().toString(36).substring(2, 15); 
+    const state = Math.random().toString(36).substring(2, 15);
+    const timestamp = Date.now();
+    const nonce = Math.random().toString(36).substring(2, 15);
     const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&state=${state}&prompt=consent&t=${timestamp}&nonce=${nonce}`;
     const width = 800;
     const height = 700;
     const left = window.screen.width / 2 - width / 2;
     const top = window.screen.height / 2 - height / 2;
     console.log('Starting fresh login flow...');
-    
+
     const windowName = `DiscordLogin_${timestamp}_${nonce}`;
     const popup = window.open(
       discordAuthUrl,
       windowName,
       `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,location=no,menubar=no,toolbar=no`
     );
-    
+
     if (!popup) {
       alert('Popup blocked! Please allow popups for this site and try again.');
     } else {
@@ -304,73 +307,73 @@ function App() {
       <Router>
         <ScrollToTop />
         <Routes>
-          <Route 
-            path="/" 
+          <Route
+            path="/"
             element={
               <PageWrapper>
                 <Home user={user} onLogin={handleLogin} onLogout={handleLogout} />
               </PageWrapper>
-            } 
+            }
           />
-          <Route 
-            path="/home" 
+          <Route
+            path="/home"
             element={
               <PageWrapper>
                 <Home user={user} onLogin={handleLogin} onLogout={handleLogout} />
               </PageWrapper>
-            } 
+            }
           />
-          <Route 
-            path="/about" 
+          <Route
+            path="/about"
             element={
               <PageWrapper>
                 <About user={user} onLogin={handleLogin} onLogout={handleLogout} />
               </PageWrapper>
-            } 
+            }
           />
-          <Route 
-            path="/status" 
+          <Route
+            path="/status"
             element={
               <PageWrapper>
                 <Status user={user} onLogin={handleLogin} onLogout={handleLogout} />
               </PageWrapper>
-            } 
+            }
           />
-          <Route 
-            path="/privacy" 
+          <Route
+            path="/privacy"
             element={
               <PageWrapper>
                 <Privacy user={user} onLogin={handleLogin} onLogout={handleLogout} />
               </PageWrapper>
-            } 
+            }
           />
-          <Route 
-            path="/terms" 
+          <Route
+            path="/terms"
             element={
               <PageWrapper>
                 <Terms user={user} onLogin={handleLogin} onLogout={handleLogout} />
               </PageWrapper>
-            } 
+            }
           />
-          <Route 
-            path="/dashboard" 
+          <Route
+            path="/dashboard"
             element={
               <PageWrapper>
                 <Dashboard user={user} onLogin={handleLogin} onLogout={handleLogout} />
               </PageWrapper>
-            } 
+            }
           />
-          <Route 
-            path="/servers" 
+          <Route
+            path="/servers"
             element={
               <PageWrapper>
                 <ServerSelect user={user} onLogin={handleLogin} onLogout={handleLogout} />
               </PageWrapper>
-            } 
+            }
           />
-          <Route 
-            path="/auth/callback" 
-            element={<AuthCallback />} 
+          <Route
+            path="/auth/callback"
+            element={<AuthCallback />}
           />
         </Routes>
       </Router>
